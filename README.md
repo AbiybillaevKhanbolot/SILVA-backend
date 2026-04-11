@@ -7,15 +7,19 @@ This repository stores backend logic and security rules:
 - Row Level Security (RLS) policies
 - Storage policies
 - SQL functions for safe role checks
+- Edge Functions (e.g. ЮKassa payment proxy)
 
 ## Stack
 
-- Supabase (PostgreSQL + Auth + Storage)
+- Supabase (PostgreSQL + Auth + Storage + Edge Functions)
 - SQL migrations
 
 ## Repository Structure
 
 - `supabase/migrations` - SQL migrations to apply in order
+- `supabase/functions/yookassa-create-payment` — create payment (prod; secrets in Supabase only)
+- `supabase/functions/yookassa-payment-status` — payment status by id
+- `docs/supabase-yookassa-setup.md` — deploy secrets, CLI, `SILVA_PAYMENT_URLS` on the frontend
 - `.env.example` - required environment variables (template only)
 
 ## Security Principles
