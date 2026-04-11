@@ -16,7 +16,7 @@ This repository stores backend logic and security rules:
 
 ## Repository Structure
 
-- `supabase/migrations` - SQL migrations to apply in order
+- `supabase/migrations` - SQL migrations to apply in order (в т.ч. `20260411_*` — колонки `bookings` под оплату и прод)
 - `supabase/functions/yookassa-create-payment` — create payment (prod; secrets in Supabase only)
 - `supabase/functions/yookassa-payment-status` — payment status by id
 - `docs/supabase-yookassa-setup.md` — deploy secrets, CLI, `SILVA_PAYMENT_URLS` on the frontend
