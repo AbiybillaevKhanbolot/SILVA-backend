@@ -20,6 +20,7 @@ This repository stores backend logic and security rules:
 - `supabase/functions/yookassa-create-payment` — create payment (prod; secrets in Supabase only)
 - `supabase/functions/yookassa-payment-status` — payment status by id
 - `docs/supabase-yookassa-setup.md` — deploy secrets, CLI, `SILVA_PAYMENT_URLS` on the frontend
+- `scripts/deploy-yookassa-functions.sh` — link + deploy ЮKassa Edge Functions (after `supabase login`)
 - `.env.example` - required environment variables (template only)
 
 ## Security Principles
@@ -46,6 +47,16 @@ Frontend uses only:
 - `VITE_SUPABASE_ANON_KEY`
 
 Do not expose any backend secrets to frontend runtime.
+
+## Edge Functions (ЮKassa) — деплой с машины
+
+CLI не может залогиниться без твоего участия. Один раз:
+
+1. `npx supabase@latest login` (откроется браузер), **или** создай токен в [Account → Access Tokens](https://supabase.com/dashboard/account/tokens) и выполни `export SUPABASE_ACCESS_TOKEN=...`.
+2. Из корня этого репозитория: `./scripts/deploy-yookassa-functions.sh`  
+   (по умолчанию project ref `siqvswjrhmckufuaomhy`; переопределение: `SUPABASE_PROJECT_REF=...`).
+
+В Dashboard проекта должны быть секреты `YOOKASSA_SHOP_ID` и `YOOKASSA_SECRET_KEY` (Edge Functions → Secrets).
 
 ## Deployment Notes
 
