@@ -1,67 +1,99 @@
 # SILVA-backend
 
-Backend-infrastructure for the SILVA project on Supabase.
+Бэкенд-инфраструктура проекта **SILVA** на **Firebase**.
 
-This repository stores backend logic and security rules:
-- PostgreSQL schema (tables, enums, constraints)
-- Row Level Security (RLS) policies
-- Storage policies
-- SQL functions for safe role checks
-- Edge Functions (e.g. ЮKassa payment proxy)
+Репозиторий хранит серверную логику, правила безопасности и конфигурацию окружения для продакшена.
 
-## Stack
+## Что находится в репозитории
 
-- Supabase (PostgreSQL + Auth + Storage + Edge Functions)
-- SQL migrations
+- Cloud Functions (бизнес-логика и интеграции, включая платежи)
+- Firestore security rules (доступ к данным по ролям)
+- Firebase Storage rules (доступ к файлам и медиа)
+- Индексы и конфигурация Firestore
+- Скрипты деплоя и служебные утилиты
+- Документация по настройке и выпуску
 
-## Repository Structure
+## Технологический стек
 
-- `supabase/migrations` - SQL migrations to apply in order (в т.ч. `20260411_*` — колонки `bookings` под оплату и прод)
-- `supabase/functions/yookassa-create-payment` — create payment (prod; secrets in Supabase only)
-- `supabase/functions/yookassa-payment-status` — payment status by id
-- `docs/supabase-yookassa-setup.md` — deploy secrets, CLI, `SILVA_PAYMENT_URLS` on the frontend
-- `scripts/deploy-yookassa-functions.sh` — link + deploy ЮKassa Edge Functions (after `supabase login`)
-- `.env.example` - required environment variables (template only)
+- **Firebase Authentication**
+- **Cloud Firestore**
+- **Cloud Functions** (Node.js/TypeScript)
+- **Firebase Storage**
+- **Firebase Hosting** (если используется для backend endpoints/proxy)
+- **Firebase CLI**
 
-## Security Principles
+## Структура репозитория
 
-- Never commit secret keys (`service_role`, DB passwords, `.env.local`)
-- Use RLS on all business tables
-- Use helper function `public.is_admin()` for admin policies (prevents recursive policy checks)
-- Keep write access minimal and role-based (`guest`, `owner`, `admin`)
+- `functions/` — Cloud Functions (основная серверная логика)
+- `firestore.rules` — правила доступа Firestore
+- `firestore.indexes.json` — индексы Firestore
+- `storage.rules` — правила доступа Storage
+- `firebase.json` — конфигурация проекта Firebase
+- `.firebaserc` — project aliases (без секретов)
+- `scripts/` — вспомогательные скрипты деплоя/проверок
+- `docs/` — техническая документация
+- `.env.example` — шаблон переменных окружения (без реальных ключей)
 
-## Initial Setup
+## Принципы безопасности
 
-1. Create a Supabase project.
-2. Open SQL Editor in Supabase.
-3. Apply migration files from `supabase/migrations` in chronological order.
-4. Create Storage buckets:
-   - `avatars` (public read)
-   - `property-images` (public read)
-5. Verify auth roles in `public.profiles` (`guest`, `owner`, `admin`).
+- Никогда не коммитить секреты (`.env`, private keys, service-account JSON и т.д.)
+- Хранить секреты только в защищенных переменных окружения (CI/CD, Secret Manager)
+- Все операции записи и чтения ограничивать правилами Firestore/Storage
+- Доступ к административным операциям — только через проверенные роли (custom claims)
+- Минимизировать права сервисных аккаунтов
 
-## Frontend Integration
+## Быстрый старт
 
-Frontend uses only:
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+1. Установить зависимости:
+   - `npm install` (в корне и/или в `functions/`, в зависимости от структуры)
+2. Авторизоваться в Firebase:
+   - `firebase login`
+3. Выбрать проект:
+   - `firebase use <project-id>`
+4. Запустить локально (по необходимости):
+   - `firebase emulators:start`
+5. Деплой:
+   - `firebase deploy`
 
-Do not expose any backend secrets to frontend runtime.
+## Переменные окружения
 
-## Edge Functions (ЮKassa) — деплой с машины
+Фронтенду обычно нужны только публичные Firebase-переменные:
 
-CLI не может залогиниться без твоего участия. Один раз:
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
 
-1. `npx supabase@latest login` (откроется браузер), **или** создай токен в [Account → Access Tokens](https://supabase.com/dashboard/account/tokens) и выполни `export SUPABASE_ACCESS_TOKEN=...`.
-2. Из корня этого репозитория: `./scripts/deploy-yookassa-functions.sh`  
-   (по умолчанию project ref `siqvswjrhmckufuaomhy`; переопределение: `SUPABASE_PROJECT_REF=...`).
+> Секретные ключи и токены не должны попадать во frontend runtime и в git.
 
-В Dashboard проекта должны быть секреты `YOOKASSA_SHOP_ID` и `YOOKASSA_SECRET_KEY` (Edge Functions → Secrets).
+## Роли и доступ
 
-## Deployment Notes
+Рекомендуемые роли пользователей:
 
-Use the same Supabase project for production frontend or a dedicated prod project.
-Before production deploy:
-- verify all RLS policies
-- verify storage policies
-- run smoke tests for guest/owner/admin flows
+- `guest` — базовый доступ на чтение публичных данных
+- `owner` — доступ к собственным сущностям/операциям
+- `admin` — расширенные права управления
+
+Реализация ролей:
+- через Firebase Auth custom claims
+- с обязательной проверкой ролей в Cloud Functions и security rules
+
+## Платежи (если подключены)
+
+Платежная логика должна выполняться в Cloud Functions:
+
+- создание платежа
+- проверка статуса платежа
+- webhook-обработчики
+
+Ключи провайдера платежей хранятся только в защищенном окружении (не в репозитории).
+
+## Рекомендации перед продакшен-деплоем
+
+- проверить Firestore rules на least-privilege
+- проверить Storage rules для приватных/публичных путей
+- убедиться, что все секреты вынесены из кода
+- прогнать smoke-тесты по ролям `guest/owner/admin`
+- проверить логи Cloud Functions и алерты мониторинга
